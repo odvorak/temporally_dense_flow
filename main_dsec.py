@@ -20,6 +20,10 @@ from tqdm import tqdm
 import ast
 from copy import deepcopy
 
+import resource
+rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)
+resource.setrlimit(resource.RLIMIT_NOFILE, (2048, rlimit[1]))
+
 
 def train(train_loader, model, optim, epoch, log_file, no_grad_split, grad_scalar, n_split):
     loss_stat = StatTracker() 
@@ -108,6 +112,10 @@ def validate(test_loader, model, mode, visualize, save_visualization_dir, n_spli
     total_pe4 = 0
     total_pe5 = 0
 
+    pred_list = []
+    gt_list = []
+    mask_list = []
+
     if model.module.__class__.__name__ in ['EfficientSpikeEVFlowNet']:
         outp_len = n_split * (1 + no_grad_ts) if mode == 'test_w_reset' else n_split
         # EfficientSpikeEVFlowNet returns predictions + prev_v1s + prev_z1s
@@ -149,17 +157,20 @@ def validate(test_loader, model, mode, visualize, save_visualization_dir, n_spli
             # Add evaluation results to the stat tracking
             if mode == 'test_wo_reset' and valid:
                 pred_flows = outps[:outp_len]
-                for pred_flow, gt_flow, gt_flow_mask in zip(pred_flows, gt_flows, gt_flow_masks):
-                    valid_pixel_errors, n_errors, \
-                    n_pe1, n_pe2, n_pe3, n_pe4, n_pe5 = \
-                        flow_error_dsec_supervised(gt_flow, gt_flow_mask, pred_flow, event_reprs,
-                                                   error_stat, masked_error_stat, gt_flow_stat)
-                    total_errors += n_errors
-                    total_pe1 += n_pe1
-                    total_pe2 += n_pe2
-                    total_pe3 += n_pe3
-                    total_pe4 += n_pe4
-                    total_pe5 += n_pe5
+                pred_list.append(pred_flows[3])
+                gt_list.append(gt_flows[3])
+                mask_list.append(gt_flow_masks[3])
+                # for pred_flow, gt_flow, gt_flow_mask in zip(pred_flows, gt_flows, gt_flow_masks):
+                #     valid_pixel_errors, n_errors, \
+                #     n_pe1, n_pe2, n_pe3, n_pe4, n_pe5 = \
+                #         flow_error_dsec_supervised(gt_flow, gt_flow_mask, pred_flow, event_reprs,
+                #                                    error_stat, masked_error_stat, gt_flow_stat)
+                #     total_errors += n_errors
+                #     total_pe1 += n_pe1
+                #     total_pe2 += n_pe2
+                #     total_pe3 += n_pe3
+                #     total_pe4 += n_pe4
+                #     total_pe5 += n_pe5
 
             elif mode != 'test_wo_reset':
                 pred_flows = outps[outp_len - 1]
@@ -183,16 +194,29 @@ def validate(test_loader, model, mode, visualize, save_visualization_dir, n_spli
                     cv2.imshow('Visualize ground truth flow', cv2.cvtColor(masked_gt_flow_rgb, cv2.COLOR_BGR2RGB))
                     cv2.waitKey(1)  # wait time in millisecond unit
 
-    print(error_stat)
-    print(masked_error_stat)
-    print(gt_flow_stat)
-    print('---- NP ----- ')
-    print(f'{total_errors:.3e}, '
-          f'{total_pe1 / total_errors:.3e}, '
-          f'{total_pe2 / total_errors:.3e}, '
-          f'{total_pe3 / total_errors:.3e}, '
-          f'{total_pe4 / total_errors:.3e}, '
-          f'{total_pe5 / total_errors:.3e}')
+    pred = torch.cat(pred_list, dim = 0)
+    gt = torch.cat(gt_list, dim = 0)
+    mask = torch.cat(mask_list, dim = 0)
+
+    pred_np = pred.cpu().numpy()
+    gt_np = gt.cpu().numpy()
+    mask_np = mask.cpu().numpy()
+
+    outdir = "/media/odvorak/Expansion/2Phase/TDF_tuning/Results/testD/"
+
+    np.save(os.path.join(outdir, 'prediction.npy'), pred_np)
+    np.save(os.path.join(outdir, 'gt.npy'), gt_np)
+    np.save(os.path.join(outdir, 'mask.npy'), mask_np)
+    # print(error_stat)
+    # print(masked_error_stat)
+    # print(gt_flow_stat)
+    # print('---- NP ----- ')
+    # print(f'{total_errors:.3e}, '
+    #       f'{total_pe1 / total_errors:.3e}, '
+    #       f'{total_pe2 / total_errors:.3e}, '
+    #       f'{total_pe3 / total_errors:.3e}, '
+    #       f'{total_pe4 / total_errors:.3e}, '
+    #       f'{total_pe5 / total_errors:.3e}')
     # print('--- nonzero and total output count ---')
     # print(', '.join(['{:.3e}'.format(float(each.avg)) for each in model.module.n_nonzero_inp_trackers]))
     # print(', '.join(['{:.3e}'.format(float(each.avg)) for each in model.module.n_inp_trackers]))
@@ -257,7 +281,7 @@ if __name__ == '__main__':
             # Default random flip function cannot be used for DSEC dataset
             # since optical flows have both quantity and direction unlike image intensities
             # We create an option to randomly flip the sample as a part of dataset
-            transforms.RandomCrop((288, 384))
+            transforms.RandomCrop((128, 128))
         ])
         train_dataset = AugmentedDSECDataset(dataset_dir, dt=args.dt, n_split=args.n_split,
                                                         transform=train_transform, random_flip=True, mode='train',
@@ -266,7 +290,7 @@ if __name__ == '__main__':
                                   pin_memory=False)
     elif 'test' in args.mode:
         test_transform = transforms.Compose([
-            transforms.CenterCrop((288, 384))
+            transforms.CenterCrop((128, 128))
         ])
         test_dataset = AugmentedDSECDataset(dataset_dir, dt=args.dt, n_split=args.n_split,
                                                        transform=test_transform, random_flip=False, mode=args.mode,
@@ -355,5 +379,7 @@ if __name__ == '__main__':
                             'model': deepcopy(model.module.state_dict())},
                            os.path.join(save_dir, 'checkpoint_ep{}.pt'.format(epoch+1)))
 
+            torch.cuda.empty_cache()
+            
         log_file.close()
 

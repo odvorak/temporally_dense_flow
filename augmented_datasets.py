@@ -71,21 +71,14 @@ class AugmentedDSECDataset(Dataset):
         # Positive and negative events in each bin are then translated to values of 2 channels.
         # For this reason, this custom dataset object will output an event representation
         #   as a tensor of shape (n_split, n_polarity=2, width, height)
-        self.dataset_dir = os.path.join(dataset_dir, f'dt{self.dt}_tsplit{self.n_split}')
+        self.dataset_dir = os.path.join(dataset_dir, f'np_dt{self.dt}_tsplit{self.n_split}')
         self.n_prefix_event_repr = n_prefix_event_repr + 1  # Get additional prefix for computing intermediate target
         # This parameter is only used for training sequential optical flow prediction
 
-        # Environment pool includes 18 sequences in DSEC dataset that have optical flows recorded
-        # Since test sequences for the DSEC dataset are not publicly released,
-        #   we split part of the training sequence for evaluation
-        # Note that each sequence below has been pre-processed to reduce processing time during training and testing
-        train_ratio = 0.8
-        env_name_pool = ['thun_00_a', 'zurich_city_01_a', 'zurich_city_02_a', 'zurich_city_02_c', 'zurich_city_02_d',
-                         'zurich_city_02_e', 'zurich_city_03_a', 'zurich_city_05_a', 'zurich_city_05_b',
-                         'zurich_city_06_a', 'zurich_city_07_a', 'zurich_city_08_a', 'zurich_city_09_a',
-                         'zurich_city_10_a', 'zurich_city_10_b', 'zurich_city_11_a', 'zurich_city_11_b',
-                         'zurich_city_11_c']
-        # env_name_pool = ['zurich_city_11_b', 'zurich_city_02_c']
+        if self.mode == "train":
+            train_ratio = 0.8
+        else:
+            train_ratio = 0
 
         # Creating a list of datapath to each sample from each environment mapping file
         # The mapping file is generated during dataset pre-processing step
@@ -104,10 +97,6 @@ class AugmentedDSECDataset(Dataset):
             # We get both the environment name and segment/chunk index.
             env_name = mapping_file_path[:-19]
             chunk_idx = int(mapping_file_path[-13:-12])
-
-            # Process only with environments declared in the pool
-            if not env_name in env_name_pool:
-                continue
 
             num_flow = sum(1 for line in open(os.path.join(self.dataset_dir, mapping_file_path), 'r')) - 1
             # There are (num_flow - n_prefix) samples from each sequence
@@ -249,7 +238,7 @@ class AugmentedDSECDataset(Dataset):
                 int_flow = torch.from_numpy(np.stack((x_shift, y_shift), axis=0)).float()
                 int_flow_mask = (int_flow[0].bool() | int_flow[1].bool()).float()
 
-                transformed_flow = torch.zeros([int_flow.shape[0], 288, 384])
+                transformed_flow = torch.zeros([int_flow.shape[0], 128, 128])
 
                 # Random or central crop for flow
                 for direction_idx in range(transformed_flow.shape[0]):
@@ -260,7 +249,7 @@ class AugmentedDSECDataset(Dataset):
                 transformed_flows.append(transformed_flow)
                 transformed_flow_masks.append(transformed_flow_mask.bool())
 
-            transformed_event_repr = torch.zeros(list(event_repr.shape[0:2]) + [288, 384])
+            transformed_event_repr = torch.zeros(list(event_repr.shape[0:2]) + [128, 128])
             # Random or central crop for event_repr
             for bin_idx in range(event_repr.shape[0]):
                 for pol_idx in range(event_repr.shape[1]):
@@ -346,8 +335,8 @@ class AugmentedDSECDataset(Dataset):
             int_flow = torch.from_numpy(np.stack((x_shift, y_shift), axis=0)).float()
             int_flow_mask = (int_flow[0].bool() | int_flow[1].bool()).float()
 
-            transformed_event_repr = torch.zeros(list(event_repr.shape[0:2]) + [288, 384])
-            transformed_flow = torch.zeros([int_flow.shape[0], 288, 384])
+            transformed_event_repr = torch.zeros(list(event_repr.shape[0:2]) + [128, 128])
+            transformed_flow = torch.zeros([int_flow.shape[0], 128, 128])
 
             # For randomized transformation, setting random seed guarantee the uniform operation
             #   between events and grayscale images
@@ -408,12 +397,12 @@ if __name__ == '__main__':
     print('--- Test test_wo_reset ---')
     # test_1_wo_reset_dataset = DSECDatasetSupervisedContinuous(
     #     dataset_dir='/local/a/datasets/dsec-preprocessed/', dt=1, n_split=10,
-    #     transform=transforms.Compose([transforms.CenterCrop((288, 384))]),
+    #     transform=transforms.Compose([transforms.CenterCrop((128, 128))]),
     #     random_flip=False, mode='test_wo_reset', n_prefix_event_repr=n_prefix_event_repr+1)
     # test_1_wo_reset_loader = DataLoader(dataset=test_1_wo_reset_dataset, batch_size=1, shuffle=False, num_workers=1)
     test_2_wo_reset_dataset = AugmentedDSECDataset(
         dataset_dir='/local/a/datasets/dsec-preprocessed/', dt=1, n_split=10,
-        transform=transforms.Compose([transforms.CenterCrop((288, 384))]),
+        transform=transforms.Compose([transforms.CenterCrop((128, 128))]),
         random_flip=False, mode='test_wo_reset', n_prefix_event_repr=n_prefix_event_repr)
     test_2_wo_reset_loader = DataLoader(dataset=test_2_wo_reset_dataset, batch_size=1, shuffle=False, num_workers=1)
     # for (event_repr_1, flow_1, flow_mask_1, reset_1, valid_1), \
@@ -444,12 +433,12 @@ if __name__ == '__main__':
     print('--- Test test_w_reset ---')
     # test_1_w_reset_dataset = DSECDatasetSupervisedContinuous(
     #     dataset_dir='/local/a/datasets/dsec-preprocessed/', dt=1, n_split=10,
-    #     transform=transforms.Compose([transforms.CenterCrop((288, 384))]),
+    #     transform=transforms.Compose([transforms.CenterCrop((128, 128))]),
     #     random_flip=False, mode='test_w_reset', n_prefix_event_repr=n_prefix_event_repr+1)
     # test_1_w_reset_loader = DataLoader(dataset=test_1_w_reset_dataset, batch_size=1, shuffle=False, num_workers=1)
     test_2_w_reset_dataset = AugmentedDSECDataset(
         dataset_dir='/local/a/datasets/dsec-preprocessed/', dt=1, n_split=10,
-        transform=transforms.Compose([transforms.CenterCrop((288, 384))]),
+        transform=transforms.Compose([transforms.CenterCrop((128, 128))]),
         random_flip=False, mode='test_w_reset', n_prefix_event_repr=n_prefix_event_repr)
     test_2_w_reset_loader = DataLoader(dataset=test_2_w_reset_dataset, batch_size=1, shuffle=False, num_workers=1)
     # for (event_repr_1, flow_1, flow_mask_1), (event_repr_2, flow_2, flow_mask_2) in tqdm(
@@ -473,13 +462,13 @@ if __name__ == '__main__':
     print('--- Test train ---')
     train_dataset_1 = DSECDatasetSupervisedContinuous(
         dataset_dir='/local/a/datasets/dsec-preprocessed/', dt=1, n_split=10,
-        transform=transforms.Compose([transforms.CenterCrop((288, 384))]),
+        transform=transforms.Compose([transforms.CenterCrop((128, 128))]),
         random_flip=False, mode='train', n_prefix_event_repr=n_prefix_event_repr+1)
     train_loader_1 = DataLoader(dataset=train_dataset_1, batch_size=1, shuffle=False, num_workers=0)
     # it_1 = iter(train_loader_1)
     train_dataset_2 = AugmentedDSECDataset(
         dataset_dir='/local/a/datasets/dsec-preprocessed/', dt=1, n_split=10,
-        transform=transforms.Compose([transforms.CenterCrop((288, 384))]),
+        transform=transforms.Compose([transforms.CenterCrop((128, 128))]),
         random_flip=False, mode='train', n_prefix_event_repr=n_prefix_event_repr)
     train_loader_2 = DataLoader(dataset=train_dataset_2, batch_size=1, shuffle=False, num_workers=0)
     # it_2 = iter(train_loader_2)
@@ -509,11 +498,11 @@ if __name__ == '__main__':
     # import sys
     # sys.exit(0)
     
-    # video_file = cv2.VideoWriter('gt_10Hz.avi', cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 10, (384, 288))
-    # video_file = cv2.VideoWriter('gt_10Hz_slow.avi', cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 5, (384, 288))
-    # video_file = cv2.VideoWriter('gt_100Hz_or.avi', cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 100, (384, 288))
-    # video_file = cv2.VideoWriter('gt_100Hz_and_slow.avi', cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 50, (384, 288))
-    # video_file = cv2.VideoWriter('gt_100Hz_int_slow.avi', cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 50, (384, 288))
+    # video_file = cv2.VideoWriter('gt_10Hz.avi', cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 10, (128, 128))
+    # video_file = cv2.VideoWriter('gt_10Hz_slow.avi', cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 5, (128, 128))
+    # video_file = cv2.VideoWriter('gt_100Hz_or.avi', cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 100, (128, 128))
+    # video_file = cv2.VideoWriter('gt_100Hz_and_slow.avi', cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 50, (128, 128))
+    # video_file = cv2.VideoWriter('gt_100Hz_int_slow.avi', cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 50, (128, 128))
 
     # for idx, (event_repr, flow, flow_mask) in tqdm(enumerate(train_loader_1), total=len(train_loader_1)):
     #     if idx == 1000:
