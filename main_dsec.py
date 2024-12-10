@@ -1,4 +1,3 @@
-
 import argparse
 import torch
 import torch.nn.parallel
@@ -70,6 +69,10 @@ def train(train_loader, model, optim, epoch, log_file, no_grad_split, grad_scala
             outp_len = 4
             outps = model(event_reprs)
             assert len(outps) == outp_len
+        elif model.module.__class__.__name__ in ['AdaptiveFlowNet2S']:
+            outp_len = 2
+            outps = model(event_reprs)
+            assert len(outps) == outp_len
         pred_flows = outps[outp_len - 1]
 
         gt_flow_masks = gt_flow_masks.unsqueeze(dim=1).expand(gt_flows.shape).cuda()
@@ -128,6 +131,8 @@ def validate(test_loader, model, mode, visualize, save_visualization_dir, n_spli
         state_len = model.module.num_encoders * 2
     elif model.module.__class__.__name__ in ['NonSpikingEVFlowNet', 'SpikeFlowNet', 'AdaptiveFlowNet']:
         outp_len = 4
+    elif model.module.__class__.__name__ in ['AdaptiveFlowNet2S']:
+        outp_len = 4
 
     with torch.no_grad():
         pbar = tqdm(test_loader)
@@ -151,7 +156,7 @@ def validate(test_loader, model, mode, visualize, save_visualization_dir, n_spli
                     last_netstate_1, last_netstate_2 = outps[outp_len:outp_len+state_len], \
                                                        outps[outp_len+state_len:outp_len+(2*state_len)]
                 assert len(outps) == outp_len+(2*state_len)
-            elif model.module.__class__.__name__ in ['NonSpikingEVFlowNet', 'SpikeFlowNet', 'AdaptiveFlowNet']:
+            elif model.module.__class__.__name__ in ['NonSpikingEVFlowNet', 'SpikeFlowNet', 'AdaptiveFlowNet', 'AdaptiveFlowNet2S']:
                 outps = model(event_reprs)
 
             # Add evaluation results to the stat tracking
@@ -312,6 +317,12 @@ if __name__ == '__main__':
                 model_options[key] = default_val
     elif args.arch in ['AdaptiveFlowNet']:
         for key, default_val in {"num_pols": 2, "base_channels": 64, "batchNorm": False, "learn_thresh": True,
+                                 "learn_leak": True, "ithresh": 1.0, "ileak": 1.0, "reset_mechanism": "soft",
+                                 "per_channel": 0}.items():
+            if key not in model_options:
+                model_options[key] = default_val
+    elif args.arch in ['AdaptiveFlowNet2S']:
+        for key, default_val in {"num_pols": 2, "base_channels": 64*4, "batchNorm": False, "learn_thresh": True,
                                  "learn_leak": True, "ithresh": 1.0, "ileak": 1.0, "reset_mechanism": "soft",
                                  "per_channel": 0}.items():
             if key not in model_options:
