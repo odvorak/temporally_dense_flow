@@ -132,7 +132,7 @@ def validate(test_loader, model, mode, visualize, save_visualization_dir, n_spli
     elif model.module.__class__.__name__ in ['NonSpikingEVFlowNet', 'SpikeFlowNet', 'AdaptiveFlowNet']:
         outp_len = 4
     elif model.module.__class__.__name__ in ['AdaptiveFlowNet2S']:
-        outp_len = 4
+        outp_len = 2
 
     with torch.no_grad():
         pbar = tqdm(test_loader)
@@ -162,9 +162,14 @@ def validate(test_loader, model, mode, visualize, save_visualization_dir, n_spli
             # Add evaluation results to the stat tracking
             if mode == 'test_wo_reset' and valid:
                 pred_flows = outps[:outp_len]
-                pred_list.append(pred_flows[3])
-                gt_list.append(gt_flows[3])
-                mask_list.append(gt_flow_masks[3])
+                if model.module.__class__.__name__ in ['AdaptiveFlowNet2S']:
+                    pred_list.append(pred_flows[1])
+                    gt_list.append(gt_flows[1])
+                    mask_list.append(gt_flow_masks[1])
+                else:
+                    pred_list.append(pred_flows[3])
+                    gt_list.append(gt_flows[3])
+                    mask_list.append(gt_flow_masks[3])
                 # for pred_flow, gt_flow, gt_flow_mask in zip(pred_flows, gt_flows, gt_flow_masks):
                 #     valid_pixel_errors, n_errors, \
                 #     n_pe1, n_pe2, n_pe3, n_pe4, n_pe5 = \
