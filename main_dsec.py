@@ -179,6 +179,9 @@ def validate(test_loader, model, mode, visualize, save_visualization_dir, n_spli
 
             elif mode != 'test_wo_reset':
                 pred_flows = outps[outp_len - 1]
+                pred_list.append(pred_flows[3])
+                gt_list.append(gt_flows[3])
+                mask_list.append(gt_flow_masks[3])
                 valid_pixel_errors, n_errors, \
                 n_pe1, n_pe2, n_pe3, n_pe4, n_pe5 = \
                     flow_error_dsec_supervised(gt_flows, gt_flow_masks, pred_flows, event_reprs,
