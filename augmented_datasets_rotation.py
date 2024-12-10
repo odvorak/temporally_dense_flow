@@ -44,7 +44,7 @@ def prop_flow(x_flow, y_flow, x_indices, y_indices, x_mask, y_mask, scale_factor
 
 
 # Custom dataset class for training DSEC dataset in a supervised manner with continuous inference option
-class AugmentedDSECDataset(Dataset):
+class AugmentedDSECDatasetRotation(Dataset):
     def __init__(self, dataset_dir, dt, n_split, transform, random_flip=False,
                  mode='train', n_prefix_event_repr=0):
 
