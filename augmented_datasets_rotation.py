@@ -337,6 +337,7 @@ class AugmentedDSECDatasetRotation(Dataset):
 
             transformed_event_repr = torch.zeros(list(event_repr.shape[0:2]) + [128, 128])
             transformed_flow = torch.zeros([int_flow.shape[0], 128, 128])
+            transformed_flow_rot = torch.zeros([int_flow.shape[0], 128, 128])
 
             # For randomized transformation, setting random seed guarantee the uniform operation
             #   between events and grayscale images
