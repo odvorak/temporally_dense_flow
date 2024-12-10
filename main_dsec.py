@@ -215,7 +215,7 @@ def validate(test_loader, model, mode, visualize, save_visualization_dir, n_spli
     gt_np = gt.cpu().numpy()
     mask_np = mask.cpu().numpy()
 
-    outdir = "/media/odvorak/Expansion/2Phase/TDF_tuning/Results/testD/"
+    outdir = "/root/"
 
     np.save(os.path.join(outdir, 'prediction.npy'), pred_np)
     np.save(os.path.join(outdir, 'gt.npy'), gt_np)
