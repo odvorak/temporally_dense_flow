@@ -4,7 +4,7 @@ import argparse
 
 def main(args):
     # Define tests
-    tests = ["N9", "N10", "N11", "N12", "D9", "D10", "D11", "D12", "V5", "V6"]
+    tests = ["N9", "N10", "N11", "N12", "D9", "D10", "D11", "D12", "V3"]
 
     dataset_root = args.dataset_root
     save_root = args.save_root
@@ -21,7 +21,7 @@ def main(args):
     arch = args.arch
     checkpoint_epoch = args.epoch
     model_path = os.path.join(
-        args.model_root, "checkpoints_and_logs", "training", f"checkpoint_ep{checkpoint_epoch}.pt"
+        args.model_root, f"checkpoint_ep{checkpoint_epoch}.pt"
     )
     script_path = args.script_path
 
