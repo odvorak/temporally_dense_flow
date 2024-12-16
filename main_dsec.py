@@ -97,7 +97,7 @@ def train(train_loader, model, optim, epoch, log_file, no_grad_split, grad_scala
     return str(loss_stat)
 
 
-def validate(test_loader, model, mode, visualize, save_visualization_dir, n_split, no_grad_ts):
+def validate(test_loader, model, mode, visualize, save_dir, n_split, no_grad_ts):
 
     # Switch model to the testing mode
     model.eval()
@@ -224,7 +224,7 @@ def validate(test_loader, model, mode, visualize, save_visualization_dir, n_spli
     gt_np = gt.cpu().numpy()
     mask_np = mask.cpu().numpy()
 
-    outdir = "/root/"
+    outdir = save_dir
 
     np.save(os.path.join(outdir, 'prediction.npy'), pred_np)
     np.save(os.path.join(outdir, 'gt.npy'), gt_np)
@@ -362,7 +362,7 @@ if __name__ == '__main__':
 
     if 'test' in args.mode:
         validate(test_loader=test_loader, model=model, mode=args.mode, visualize=args.visualize,
-                 save_visualization_dir=save_dir + '_visualization', n_split=args.n_split, no_grad_ts=args.no_grad_ts)
+                 save_dir=args.save_dir, n_split=args.n_split, no_grad_ts=args.no_grad_ts)
 
     elif args.mode == 'train':
         if os.path.isfile(save_dir+'.log') and not args.overwrite:
