@@ -167,9 +167,9 @@ def validate(test_loader, model, mode, visualize, save_dir, n_split, no_grad_ts)
                     gt_list.append(gt_flows[1])
                     mask_list.append(gt_flow_masks[1])
                 elif model.module.__class__.__name__ in ['NonSpikingEVFlowNet']:
-                    pred_list.append(pred_flows[0])
-                    gt_list.append(gt_flows[0])
-                    mask_list.append(gt_flow_masks[0])
+                    pred_list.append(pred_flows[2])
+                    gt_list.append(gt_flows[2])
+                    mask_list.append(gt_flow_masks[2])
                 else:
                     pred_list.append(pred_flows[3])
                     gt_list.append(gt_flows[3])
