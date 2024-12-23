@@ -4,7 +4,7 @@ import argparse
 
 def main(args):
     # Define tests
-    tests = ["N9", "N10", "N11", "N12", "D9", "D10", "D11", "D12", "V3"]
+    tests = ["N9", "N10", "N11", "N12", "D9", "D10", "D11", "D12", "V9", "V10", "V11", "V12"]
 
     dataset_root = args.dataset_root
     save_root = args.save_root
