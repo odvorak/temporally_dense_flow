@@ -80,31 +80,41 @@ def train(train_loader, model, optim, epoch, log_file, no_grad_split, grad_scala
         valid_pixel_errors = all_pixel_errors[gt_flow_masks]
         avg_loss = torch.mean(valid_pixel_errors)
 
-        error = gt_flows - pred_flows
+        # Compute error
+        error = gt_flows - pred_flows  # Shape: (B, 2, H, W)
 
-        # Compute independence penalty (inline implementation)
-        errors = error.pow(2).sum(dim=1, keepdim=True)  # Combine flow dimensions, Shape: (B, 1, H, W)
-        neighborhood_size = 3
-        patches = torch.nn.functional.unfold(errors, kernel_size=neighborhood_size, padding=1)  # Shape: (B, k*k, H*W)
-        patches = patches.transpose(1, 2)  # Shape: (B, H*W, k*k)
+        # Compute neighboring correlation penalty
+        # Extract the two error components (u and v directions)
+        error_u = error[:, 0:1, :, :]  # Shape: (B, 1, H, W)
+        error_v = error[:, 1:2, :, :]  # Shape: (B, 1, H, W)
 
-        # Mean center the patches
-        mean_patches = patches.mean(dim=-1, keepdim=True)  # Shape: (B, H*W, 1)
-        centered_patches = patches - mean_patches
+        # Compute shifts for both components
+        shifts = {
+            'up': lambda x: F.pad(x[:, :, :-1, :], (0, 0, 1, 0), mode='constant', value=0),
+            'down': lambda x: F.pad(x[:, :, 1:, :], (0, 0, 0, 1), mode='constant', value=0),
+            'left': lambda x: F.pad(x[:, :, :, :-1], (1, 0, 0, 0), mode='constant', value=0),
+            'right': lambda x: F.pad(x[:, :, :, 1:], (0, 1, 0, 0), mode='constant', value=0),
+        }
 
-        # Compute covariance matrix
-        covariance = centered_patches.bmm(centered_patches.transpose(1, 2)) / (neighborhood_size ** 2 - 1)
+        # Compute dot products of (u, v) with their shifted neighbors
+        correlation_penalty = 0
+        for shift_name, shift_fn in shifts.items():
+            shifted_u = shift_fn(error_u)
+            shifted_v = shift_fn(error_v)
 
-        # Penalize off-diagonal elements
-        eye_mask = torch.eye(neighborhood_size ** 2, device=covariance.device).bool()
-        off_diagonal_elements = covariance[~eye_mask].view(covariance.size(0), covariance.size(1), -1)
-        independence_penalty = off_diagonal_elements.pow(2).mean()
+            # Compute dot product of (u, v) with their shifted counterparts
+            corr_u = (error_u * shifted_u).mean()
+            corr_v = (error_v * shifted_v).mean()
+            correlation_penalty += corr_u + corr_v
+
+        # Normalize penalty by the number of shifts
+        correlation_penalty /= len(shifts)
 
         # Combine losses
-        lambda_independence = 0.1  # Hyperparameter to weight the independence loss
+        lambda_correlation = 0.1  # Weight for the correlation penalty
         print(avg_loss)
-        print(lambda_independence * independence_penalty)
-        total_loss = avg_loss + lambda_independence * independence_penalty
+        print(lambda_correlation * correlation_penalty)
+        total_loss = avg_loss + lambda_correlation * correlation_penalty
 
         # compute gradient and do optimization step
         optim.zero_grad()
