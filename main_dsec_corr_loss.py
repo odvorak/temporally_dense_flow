@@ -74,6 +74,7 @@ def train(train_loader, model, optim, epoch, log_file, no_grad_split, grad_scala
             outps = model(event_reprs)
             assert len(outps) == outp_len
         pred_flows = outps[outp_len - 1]
+        pred_flows_lr = outps[outp_len - 3]
 
         gt_flow_masks = gt_flow_masks.unsqueeze(dim=1).expand(gt_flows.shape).cuda()
         all_pixel_errors = (gt_flows - pred_flows)**2
@@ -81,7 +82,8 @@ def train(train_loader, model, optim, epoch, log_file, no_grad_split, grad_scala
         avg_loss = torch.mean(valid_pixel_errors)
 
         # Compute error
-        error = gt_flows - pred_flows  # Shape: (B, 2, H, W)
+        gt_flows_lr = torch.nn.functional.interpolate(gt_flows, size=(16, 16), mode='bilinear', align_corners=False)
+        error = gt_flows_lr - pred_flows_lr  # Shape: (B, 2, H, W)
 
         # Compute neighboring correlation penalty
         # Extract the two error components (u and v directions)
@@ -116,9 +118,9 @@ def train(train_loader, model, optim, epoch, log_file, no_grad_split, grad_scala
         elif epoch < 10:
             lambda_correlation = 0.1  # Weight for the correlation penalty
         elif epoch < 20:
-            lambda_correlation = 0.5  # Weight for the correlation penalty
+            lambda_correlation = 0.2  # Weight for the correlation penalty
         else:
-            lambda_correlation = 1  # Weight for the correlation penalty
+            lambda_correlation = 0.4  # Weight for the correlation penalty
 
         total_loss = avg_loss + lambda_correlation * correlation_penalty
 
