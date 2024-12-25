@@ -54,8 +54,8 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run test scripts for datasets.")
-    parser.add_argument("--dataset-root", default="/root/test_savedirs/", help="Root directory of the datasets.")
-    parser.add_argument("--save-root", default="/root/test_results/", help="Root directory to save outputs.")
+    parser.add_argument("--dataset-root", default="/root/savedir_test/", help="Root directory of the datasets.")
+    parser.add_argument("--save-root", default="/root/results/", help="Root directory to save outputs.")
     parser.add_argument("--arch", default="AdaptiveFlowNet", help="Model architecture.")
     parser.add_argument("--epoch", type=int, default=20, help="Checkpoint epoch number.")
     parser.add_argument("--model-root", required=True, help="Root directory of the model checkpoints.")
