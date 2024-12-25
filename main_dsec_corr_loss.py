@@ -90,10 +90,10 @@ def train(train_loader, model, optim, epoch, log_file, no_grad_split, grad_scala
 
         # Compute shifts for both components
         shifts = {
-            'up': lambda x: F.pad(x[:, :, :-1, :], (0, 0, 1, 0), mode='constant', value=0),
-            'down': lambda x: F.pad(x[:, :, 1:, :], (0, 0, 0, 1), mode='constant', value=0),
-            'left': lambda x: F.pad(x[:, :, :, :-1], (1, 0, 0, 0), mode='constant', value=0),
-            'right': lambda x: F.pad(x[:, :, :, 1:], (0, 1, 0, 0), mode='constant', value=0),
+            'up': lambda x: torch.nn.functional.pad(x[:, :, :-1, :], (0, 0, 1, 0), mode='constant', value=0),
+            'down': lambda x: torch.nn.functional.pad(x[:, :, 1:, :], (0, 0, 0, 1), mode='constant', value=0),
+            'left': lambda x: torch.nn.functional.pad(x[:, :, :, :-1], (1, 0, 0, 0), mode='constant', value=0),
+            'right': lambda x: torch.nn.functional.pad(x[:, :, :, 1:], (0, 1, 0, 0), mode='constant', value=0),
         }
 
         # Compute dot products of (u, v) with their shifted neighbors
