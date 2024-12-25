@@ -85,7 +85,7 @@ def train(train_loader, model, optim, epoch, log_file, no_grad_split, grad_scala
         # Compute independence penalty (inline implementation)
         errors = error.pow(2).sum(dim=1, keepdim=True)  # Combine flow dimensions, Shape: (B, 1, H, W)
         neighborhood_size = 3
-        patches = F.unfold(errors, kernel_size=neighborhood_size, padding=1)  # Shape: (B, k*k, H*W)
+        patches = torch.nn.functional.unfold(errors, kernel_size=neighborhood_size, padding=1)  # Shape: (B, k*k, H*W)
         patches = patches.transpose(1, 2)  # Shape: (B, H*W, k*k)
 
         # Mean center the patches
