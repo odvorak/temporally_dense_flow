@@ -35,7 +35,7 @@ def main(args):
             f"--mode test_wo_reset "
             f"--save-dir \"{save_dir}\" "
             f"--model-path \"{model_path}\" "
-            f"--model-options \"'num_res_blocks': 2\""
+            #f"--model-options \"'num_res_blocks': 2\""
         )
         try:
             print(f"Running: {cmd}")
