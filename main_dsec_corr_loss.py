@@ -110,7 +110,7 @@ def train(train_loader, model, optim, epoch, log_file, no_grad_split, grad_scala
         optim.zero_grad()
         # avg_loss.backward()
         # optim.step()
-        grad_scalar.scale(total_loss_loss).backward()
+        grad_scalar.scale(total_loss).backward()
         grad_scalar.step(optim)
         grad_scalar.update()
 
