@@ -112,8 +112,6 @@ def train(train_loader, model, optim, epoch, log_file, no_grad_split, grad_scala
 
         # Combine losses
         lambda_correlation = 0.1  # Weight for the correlation penalty
-        print(avg_loss)
-        print(lambda_correlation * correlation_penalty)
         total_loss = avg_loss + lambda_correlation * correlation_penalty
 
         # compute gradient and do optimization step
