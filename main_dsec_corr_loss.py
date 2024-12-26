@@ -112,15 +112,7 @@ def train(train_loader, model, optim, epoch, log_file, no_grad_split, grad_scala
         # Normalize penalty by the number of shifts
         correlation_penalty /= len(shifts)
 
-        if epoch < 5:
-            # Combine losses
-            lambda_correlation = 0  # Weight for the correlation penalty
-        elif epoch < 10:
-            lambda_correlation = 0.1  # Weight for the correlation penalty
-        elif epoch < 20:
-            lambda_correlation = 0.2  # Weight for the correlation penalty
-        else:
-            lambda_correlation = 0.4  # Weight for the correlation penalty
+        lambda_correlation = 0.1  # Weight for the correlation penalty
 
         total_loss = avg_loss + lambda_correlation * correlation_penalty
 
