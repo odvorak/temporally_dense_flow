@@ -74,7 +74,6 @@ def train(train_loader, model, optim, epoch, log_file, no_grad_split, grad_scala
             outps = model(event_reprs)
             assert len(outps) == outp_len
         pred_flows = outps[outp_len - 1]
-        pred_flows_lr =  torch.nn.functional.interpolate(pred_flows, size=(16, 16), mode='bilinear', align_corners=False)
 
         gt_flow_masks = gt_flow_masks.unsqueeze(dim=1).expand(gt_flows.shape).cuda()
         all_pixel_errors = (gt_flows - pred_flows)**2
@@ -82,38 +81,46 @@ def train(train_loader, model, optim, epoch, log_file, no_grad_split, grad_scala
         avg_loss = torch.mean(valid_pixel_errors)
 
         # Compute error
-        gt_flows_lr = torch.nn.functional.interpolate(gt_flows, size=(16, 16), mode='bilinear', align_corners=False)
-        error = gt_flows_lr - pred_flows_lr  # Shape: (B, 2, H, W)
+        error = gt_flows - pred_flows  # Shape: (B, 2, H, W)
 
-        # Compute neighboring correlation penalty
         # Extract the two error components (u and v directions)
         error_u = error[:, 0:1, :, :]  # Shape: (B, 1, H, W)
         error_v = error[:, 1:2, :, :]  # Shape: (B, 1, H, W)
 
-        # Compute shifts for both components
-        shifts = {
-            'up': lambda x: torch.nn.functional.pad(x[:, :, :-1, :], (0, 0, 1, 0), mode='constant', value=0),
-            'down': lambda x: torch.nn.functional.pad(x[:, :, 1:, :], (0, 0, 0, 1), mode='constant', value=0),
-            'left': lambda x: torch.nn.functional.pad(x[:, :, :, :-1], (1, 0, 0, 0), mode='constant', value=0),
-            'right': lambda x: torch.nn.functional.pad(x[:, :, :, 1:], (0, 1, 0, 0), mode='constant', value=0),
-        }
+        # Function to generate multi-pixel shifts
+        def multi_pixel_shift(x, direction, num_pixels):
+            if direction == 'up':
+                return torch.nn.functional.pad(x[:, :, :-num_pixels, :], (0, 0, num_pixels, 0), mode='constant',
+                                               value=0)
+            elif direction == 'down':
+                return torch.nn.functional.pad(x[:, :, num_pixels:, :], (0, 0, 0, num_pixels), mode='constant', value=0)
+            elif direction == 'left':
+                return torch.nn.functional.pad(x[:, :, :, :-num_pixels], (num_pixels, 0, 0, 0), mode='constant',
+                                               value=0)
+            elif direction == 'right':
+                return torch.nn.functional.pad(x[:, :, :, num_pixels:], (0, num_pixels, 0, 0), mode='constant', value=0)
 
-        # Compute dot products of (u, v) with their shifted neighbors
+        # Initialize correlation penalty
         correlation_penalty = 0
-        for shift_name, shift_fn in shifts.items():
-            shifted_u = shift_fn(error_u)
-            shifted_v = shift_fn(error_v)
 
-            # Compute dot product of (u, v) with their shifted counterparts
-            corr_u = (error_u * shifted_u).mean()
-            corr_v = (error_v * shifted_v).mean()
-            correlation_penalty += corr_u + corr_v
+        # Compute shifts for 1 to 8 pixels in each direction
+        for num_pixels in range(1, 9):  # Shift sizes from 1 to 8 pixels
+            for direction in ['up', 'down', 'left', 'right']:
+                shifted_u = multi_pixel_shift(error_u, direction, num_pixels)
+                shifted_v = multi_pixel_shift(error_v, direction, num_pixels)
 
-        # Normalize penalty by the number of shifts
-        correlation_penalty /= len(shifts)
+                # Compute dot product of (u, v) with their shifted counterparts
+                corr_u = (error_u * shifted_u).mean()
+                corr_v = (error_v * shifted_v).mean()
+                correlation_penalty += corr_u + corr_v
+
+        # Normalize penalty by the total number of shifts
+        num_shifts = 8 * 4  # 8 pixel shifts × 4 directions
+        correlation_penalty /= num_shifts
 
         lambda_correlation = 0.1  # Weight for the correlation penalty
 
+        # Compute total loss
         total_loss = avg_loss + lambda_correlation * correlation_penalty
 
         # compute gradient and do optimization step
