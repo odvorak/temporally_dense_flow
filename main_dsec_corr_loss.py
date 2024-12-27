@@ -74,7 +74,7 @@ def train(train_loader, model, optim, epoch, log_file, no_grad_split, grad_scala
             outps = model(event_reprs)
             assert len(outps) == outp_len
         pred_flows = outps[outp_len - 1]
-        pred_flows_lr = outps[outp_len - 3]
+        pred_flows_lr =  torch.nn.functional.interpolate(pred_flows, size=(16, 16), mode='bilinear', align_corners=False)
 
         gt_flow_masks = gt_flow_masks.unsqueeze(dim=1).expand(gt_flows.shape).cuda()
         all_pixel_errors = (gt_flows - pred_flows)**2
