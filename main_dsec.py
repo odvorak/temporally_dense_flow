@@ -76,7 +76,11 @@ def train(train_loader, model, optim, epoch, log_file, no_grad_split, grad_scala
         pred_flows = outps[outp_len - 1]
 
         gt_flow_masks = gt_flow_masks.unsqueeze(dim=1).expand(gt_flows.shape).cuda()
-        all_pixel_errors = (gt_flows - pred_flows)**2
+        loss_type = "l1"
+        if loss_type == "l1":
+            all_pixel_errors = np.abs(gt_flows - pred_flows)
+        elif loss_type == "l2":
+            all_pixel_errors = (gt_flows - pred_flows)**2
         valid_pixel_errors = all_pixel_errors[gt_flow_masks]
         avg_loss = torch.mean(valid_pixel_errors)
 
