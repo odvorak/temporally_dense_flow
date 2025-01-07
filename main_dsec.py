@@ -342,7 +342,7 @@ if __name__ == '__main__':
             if key not in model_options:
                 model_options[key] = default_val
     elif args.arch in ['AdaptiveFlowNet']:
-        for key, default_val in {"num_pols": 2, "base_channels": 64, "batchNorm": False, "learn_thresh": True,
+        for key, default_val in {"num_pols": 2, "base_channels": 16, "batchNorm": False, "learn_thresh": True,
                                  "learn_leak": True, "ithresh": 1.0, "ileak": 1.0, "reset_mechanism": "soft",
                                  "per_channel": 0}.items():
             if key not in model_options:
