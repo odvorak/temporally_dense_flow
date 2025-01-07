@@ -83,8 +83,9 @@ def train(train_loader, model, optim, epoch, log_file, no_grad_split, grad_scala
             all_pixel_errors = (gt_flows - pred_flows)**2
         elif loss_type == "corr":
             all_pixel_errors = torch.abs(gt_flows - pred_flows)
-            downsampled_errors = torch.nn.functional.interpolate(all_pixel_errors, scale_factor=1 / 32, mode='bilinear',
-                                               align_corners=False)
+            all_pixel_errors_signed = gt_flows - pred_flows
+            downsampled_errors = torch.abs(torch.nn.functional.interpolate(all_pixel_errors_signed, scale_factor=1 / 32, mode='bilinear',
+                                               align_corners=False))
 
         valid_pixel_errors = all_pixel_errors[gt_flow_masks]
         avg_loss = torch.mean(valid_pixel_errors) + 0.5 * torch.mean(downsampled_errors)
