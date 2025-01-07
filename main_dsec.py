@@ -76,13 +76,18 @@ def train(train_loader, model, optim, epoch, log_file, no_grad_split, grad_scala
         pred_flows = outps[outp_len - 1]
 
         gt_flow_masks = gt_flow_masks.unsqueeze(dim=1).expand(gt_flows.shape).cuda()
-        loss_type = "l1"
+        loss_type = "corr"
         if loss_type == "l1":
-            all_pixel_errors = np.abs(gt_flows - pred_flows)
+            all_pixel_errors = torch.abs(gt_flows - pred_flows)
         elif loss_type == "l2":
             all_pixel_errors = (gt_flows - pred_flows)**2
+        elif loss_type == "corr":
+            all_pixel_errors = torch.abs(gt_flows - pred_flows)
+            downsampled_errors = torch.nn.functional.interpolate(all_pixel_errors, scale_factor=1 / 32, mode='bilinear',
+                                               align_corners=False)
+
         valid_pixel_errors = all_pixel_errors[gt_flow_masks]
-        avg_loss = torch.mean(valid_pixel_errors)
+        avg_loss = torch.mean(valid_pixel_errors) + 0.5 * torch.mean(downsampled_errors)
 
         # compute gradient and do optimization step
         optim.zero_grad()
