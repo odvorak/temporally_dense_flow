@@ -25,7 +25,10 @@ resource.setrlimit(resource.RLIMIT_NOFILE, (2048, rlimit[1]))
 
 
 def train(train_loader, model, optim, epoch, log_file, no_grad_split, grad_scalar, n_split):
-    loss_stat = StatTracker() 
+    loss_stat = StatTracker()
+    loss_stat_n = StatTracker()
+    loss_stat_o = StatTracker()
+
 
     if model.module.__class__.__name__ in ['EfficientSpikeEVFlowNet']:
         # EfficientSpikeEVFlowNet returns predictions + prev_v1s + prev_z1s
@@ -101,10 +104,12 @@ def train(train_loader, model, optim, epoch, log_file, no_grad_split, grad_scala
         grad_scalar.update()
 
         loss_stat.update(valid_pixel_errors.detach())
+        loss_stat_n.update(downsampled_errors_abs.detach())
+        loss_stat_o.update(avg_loss.detach())
 
         if batch_idx % 20 == 0:
-            pbar.set_description("Training - Epoch: {} Loss: {}".format(epoch+1, loss_stat))
-    log_file.write('Epoch: {} Loss: {}\n'.format(epoch, loss_stat))
+            pbar.set_description("Training - Epoch: {} Loss: {}".format(epoch+1, loss_stat_o))
+    log_file.write('Epoch: {} Loss total: {}, Loss AEE: {}, Loss Corr: {}\n'.format(epoch, loss_stat_o, loss_stat, loss_stat_n))
 
     return str(loss_stat)
 
