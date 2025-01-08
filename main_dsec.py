@@ -83,12 +83,14 @@ def train(train_loader, model, optim, epoch, log_file, no_grad_split, grad_scala
             all_pixel_errors = (gt_flows - pred_flows)**2
         elif loss_type == "corr":
             all_pixel_errors = torch.abs(gt_flows - pred_flows)
+            all_pixel_errors_signed = gt_flows - pred_flows
             downsampled_errors = torch.nn.functional.avg_pool2d(all_pixel_errors_signed, kernel_size=32, stride=32)
+            downsampled_errors_abs = torch.abs(downsampled_errors)
 
         valid_pixel_errors = all_pixel_errors[gt_flow_masks]
         print('classic', torch.mean(valid_pixel_errors))
-        print('new', torch.mean(downsampled_errors))
-        avg_loss = torch.mean(valid_pixel_errors) + 0.5 * torch.mean(downsampled_errors)
+        print('new', torch.mean(downsampled_errors_abs))
+        avg_loss = torch.mean(valid_pixel_errors) + 0.5 * torch.mean(downsampled_errors_abs)
 
         # compute gradient and do optimization step
         optim.zero_grad()
