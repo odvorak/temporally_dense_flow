@@ -108,7 +108,7 @@ def train(train_loader, model, optim, epoch, log_file, no_grad_split, grad_scala
         loss_stat_o.update(avg_loss.detach())
 
         if batch_idx % 20 == 0:
-            pbar.set_description("Training - Epoch: {} Loss: {}".format(epoch+1, loss_stat_o))
+            pbar.set_description("Training - Epoch: {} Loss: {}".format(epoch+1, loss_stat))
     log_file.write('Epoch: {} Loss total: {}, Loss AEE: {}, Loss Corr: {}\n'.format(epoch, loss_stat_o, loss_stat, loss_stat_n))
 
     return str(loss_stat)
