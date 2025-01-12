@@ -79,7 +79,7 @@ def train(train_loader, model, optim, epoch, log_file, no_grad_split, grad_scala
         pred_flows = outps[outp_len - 1]
 
         gt_flow_masks = gt_flow_masks.unsqueeze(dim=1).expand(gt_flows.shape).cuda()
-        loss_type = "corr"
+        loss_type = "l1"
         if loss_type == "l1":
             all_pixel_errors = torch.abs(gt_flows - pred_flows)
         elif loss_type == "l2":
@@ -342,7 +342,7 @@ if __name__ == '__main__':
     model_options = ast.literal_eval('{'+args.model_options+'}')
     if args.arch in ['NonSpikingEVFlowNet']:
         for key, default_val in {'num_pols': 2 * args.n_split, 'num_encoders': 4, 'num_res_blocks': 0,
-                                 'norm': 'bn-all-ts', 'c_mul': 2, 'num_base_c': 32}.items():
+                                 'norm': 'bn-all-ts', 'c_mul': 2, 'num_base_c': 16}.items():
             if key not in model_options:
                 model_options[key] = default_val
     elif args.arch in ['SpikeFlowNet']:
