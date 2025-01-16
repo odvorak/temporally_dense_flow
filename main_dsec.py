@@ -209,7 +209,7 @@ def validate(test_loader, model, mode, visualize, save_dir, n_split, no_grad_ts)
             elif mode != 'test_wo_reset':
                 pred_flows = outps[outp_len - 1]
                 if model.module.__class__.__name__ in ['NonSpikingEVFlowNet']:
-                    pred_list.append(pred_flows[3])
+                    pred_list.append((pred_flows[0] + pred_list[1] + pred_list[2] + pred_list[3])/4)
                     gt_list.append(gt_flows[3])
                     mask_list.append(gt_flow_masks[3])
                 else:
