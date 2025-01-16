@@ -219,7 +219,7 @@ def validate(test_loader, model, mode, visualize, save_dir, n_split, no_grad_ts)
                 else:
                     pred_list.append(pred_flows[-1])
                     gt_list.append(gt_flows[-1])
-                    print(torch.mean(torch.abs(pred_flows[-1] - gt_flows[-1])))
+                    print(torch.mean(torch.abs(pred_flows[-1].cuda() - gt_flows[-1].cuda())))
                     mask_list.append(gt_flow_masks[-1])
                 #valid_pixel_errors, n_errors, \
                 #n_pe1, n_pe2, n_pe3, n_pe4, n_pe5 = \
