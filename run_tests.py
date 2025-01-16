@@ -32,7 +32,7 @@ def main(args):
             f"--dataset-dir \"{dataset_dir}\" "
             f"--arch \"{arch}\" "
             f"--bs 1 "
-            f"--mode test_wo_reset "
+            f"--mode test_w_reset "
             f"--save-dir \"{save_dir}\" "
             f"--model-path \"{model_path}\" "
             #f"--model-options \"'num_res_blocks': 2\""
