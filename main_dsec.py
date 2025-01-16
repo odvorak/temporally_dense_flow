@@ -187,17 +187,17 @@ def validate(test_loader, model, mode, visualize, save_dir, n_split, no_grad_ts)
                     gt_list.append(gt_flows[1])
                     mask_list.append(gt_flow_masks[1])
                 elif model.module.__class__.__name__ in ['NonSpikingEVFlowNet']:
-                    pred_list.append(pred_flows[2])
-                    gt_list.append(gt_flows[2])
-                    mask_list.append(gt_flow_masks[2])
+                    pred_list.append(pred_flows[-1])
+                    gt_list.append(gt_flows[-1])
+                    mask_list.append(gt_flow_masks[-1])
                 elif model.module.__class__.__name__ in ['SpikeFlowNet']:
                     pred_list.append(pred_flows[-1])
                     gt_list.append(gt_flows[-1])
                     mask_list.append(gt_flow_masks[-1])
                 else:
-                    pred_list.append(pred_flows[3])
-                    gt_list.append(gt_flows[3])
-                    mask_list.append(gt_flow_masks[3])
+                    pred_list.append(pred_flows[-1])
+                    gt_list.append(gt_flows[-1])
+                    mask_list.append(gt_flow_masks[-1])
                 # for pred_flow, gt_flow, gt_flow_mask in zip(pred_flows, gt_flows, gt_flow_masks):
                 #     valid_pixel_errors, n_errors, \
                 #     n_pe1, n_pe2, n_pe3, n_pe4, n_pe5 = \
