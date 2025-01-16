@@ -209,23 +209,23 @@ def validate(test_loader, model, mode, visualize, save_dir, n_split, no_grad_ts)
             elif mode != 'test_wo_reset':
                 pred_flows = outps[outp_len - 1]
                 if model.module.__class__.__name__ in ['NonSpikingEVFlowNet']:
-                    pred_list.append((pred_flows[0] + pred_list[1] + pred_list[2] + pred_list[3])/4)
+                    pred_list.append((pred_flows[3]))
                     gt_list.append(gt_flows[3])
                     mask_list.append(gt_flow_masks[3])
                 else:
-                    pred_list.append(pred_flows[3])
-                    gt_list.append(gt_flows[3])
-                    mask_list.append(gt_flow_masks[3])
-                valid_pixel_errors, n_errors, \
-                n_pe1, n_pe2, n_pe3, n_pe4, n_pe5 = \
-                    flow_error_dsec_supervised(gt_flows, gt_flow_masks, pred_flows, event_reprs,
-                                               error_stat, masked_error_stat, gt_flow_stat)
-                total_errors += n_errors
-                total_pe1 += n_pe1
-                total_pe2 += n_pe2
-                total_pe3 += n_pe3
-                total_pe4 += n_pe4
-                total_pe5 += n_pe5
+                    pred_list.append(pred_flows[0])
+                    gt_list.append(gt_flows[0])
+                    mask_list.append(gt_flow_masks[0])
+                #valid_pixel_errors, n_errors, \
+                #n_pe1, n_pe2, n_pe3, n_pe4, n_pe5 = \
+                #    flow_error_dsec_supervised(gt_flows, gt_flow_masks, pred_flows, event_reprs,
+                #                               error_stat, masked_error_stat, gt_flow_stat)
+                #total_errors += n_errors
+                #total_pe1 += n_pe1
+                #total_pe2 += n_pe2
+                #total_pe3 += n_pe3
+                #total_pe4 += n_pe4
+                #total_pe5 += n_pe5
 
                 if visualize:
                     np_gt_flow = gt_flows[0].numpy()
