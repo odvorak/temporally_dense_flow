@@ -149,7 +149,7 @@ class AugmentedVoxelDSECDataset(Dataset):
         ratio_latter_gt = offset_idx / self.n_split
         seq_of_sample_paths = self.seqs_of_sample_paths[seq_idx][-(self.n_prefix_event_repr+1):]
         # event_repr has a dimension (num_bins*(1+n_prefix_event_repr), num_polarities, height, width)
-        event_repr = torch.cat([torch.load(sample_path)['event_repr'] for sample_path in seq_of_sample_paths])
+        event_repr = torch.cat([torch.load(sample_path)['voxel'] for sample_path in seq_of_sample_paths])
         # event_repr = torch.cat(
         #     [torch.from_numpy(np.load(sample_path.replace(f'dt{self.dt}_tsplit{self.n_split}', f'np_voxel_dt{self.dt}_tsplit{self.n_split}').replace('.pt', '.npz'))['voxel']) for sample_path in
         #      seq_of_sample_paths])
