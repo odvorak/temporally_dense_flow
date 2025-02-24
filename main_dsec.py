@@ -88,7 +88,7 @@ def train(train_loader, model, optim, epoch, log_file, no_grad_split, grad_scala
             all_pixel_errors = torch.abs(gt_flows - pred_flows)
             sig_u = (pred_flows[:, 0] - gt_flows[:, 0]).unsqueeze(1)  # Shape: [16, 1, 128, 12]
             sig_v = (pred_flows[:, 1] - gt_flows[:, 1]).unsqueeze(1)  # Shape: [16, 1, 128, 12]
-            kernel_size = 50
+            kernel_size = 49
             #
             # # Create a mean kernel (normalized)
             mean_kernel = torch.ones((1, 1, kernel_size, kernel_size), device='cuda') / (kernel_size ** 2)
@@ -100,7 +100,7 @@ def train(train_loader, model, optim, epoch, log_file, no_grad_split, grad_scala
             # # Compute correlation loss
             corr_loss = torch.abs(unsig_u_smooth) + torch.abs(unsig_v_smooth)
             #
-            all_pixel_errors = all_pixel_errors + 0.5 * corr_loss[0:128,0:128]
+            all_pixel_errors = all_pixel_errors + 0.5 * corr_loss
 
         valid_pixel_errors = all_pixel_errors[gt_flow_masks]
         #print('classic', torch.mean(valid_pixel_errors))
