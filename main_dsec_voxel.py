@@ -167,7 +167,7 @@ if __name__ == '__main__':
             # Default random flip function cannot be used for DSEC dataset
             # since optical flows have both quantity and direction unlike image intensities
             # We create an option to randomly flip the sample as a part of dataset
-            transforms.RandomCrop((288, 384))
+            transforms.RandomCrop((128, 128))
         ])
         train_dataset = AugmentedVoxelDSECDataset(dataset_dir, dt=args.dt, n_split=args.n_split,
                                                         transform=train_transform, random_flip=True, mode='train')
