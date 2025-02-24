@@ -91,7 +91,7 @@ def train(train_loader, model, optim, epoch, log_file, no_grad_split, grad_scala
             kernel_size = 50
             #
             # # Create a mean kernel (normalized)
-            mean_kernel = torch.ones((1, 1, kernel_size, kernel_size), device='cuda') / (kernel_size ** 2)
+            mean_kernel = torch.ones((1, kernel_size, kernel_size), device='cuda') / (kernel_size ** 2)
             #
             # # Apply the mean filter to smooth the entire field
             unsig_u_smooth = torch.nn.functional.conv2d(sig_u, mean_kernel, padding=kernel_size // 2)
