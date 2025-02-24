@@ -81,11 +81,6 @@ class AugmentedVoxelDSECDataset(Dataset):
         #   we split part of the training sequence for evaluation
         # Note that each sequence below has been pre-processed to reduce processing time during training and testing
         train_ratio = 0.8
-        env_name_pool = ['thun_00_a', 'zurich_city_01_a', 'zurich_city_02_a', 'zurich_city_02_c', 'zurich_city_02_d',
-                         'zurich_city_02_e', 'zurich_city_03_a', 'zurich_city_05_a', 'zurich_city_05_b',
-                         'zurich_city_06_a', 'zurich_city_07_a', 'zurich_city_08_a', 'zurich_city_09_a',
-                         'zurich_city_10_a', 'zurich_city_10_b', 'zurich_city_11_a', 'zurich_city_11_b',
-                         'zurich_city_11_c']
         # env_name_pool = ['zurich_city_11_b', 'zurich_city_02_c']
 
         # Creating a list of datapath to each sample from each environment mapping file
@@ -98,9 +93,6 @@ class AugmentedVoxelDSECDataset(Dataset):
             env_name = mapping_file_path[:-19]
             chunk_idx = int(mapping_file_path[-13:-12])
 
-            # Process only with environments declared in the pool
-            if not env_name in env_name_pool:
-                continue
 
             num_flow = sum(1 for line in open(os.path.join(self.dataset_dir, mapping_file_path), 'r')) - 1
             # There are (num_flow - n_prefix) samples from each sequence
