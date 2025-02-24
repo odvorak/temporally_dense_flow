@@ -240,9 +240,9 @@ class AugmentedVoxelDSECDataset(Dataset):
         int_flow_mask = (int_flow[0].bool() | int_flow[1].bool()).float()
 
         if self.mode == 'test_w_reset':
-            transformed_ori_event_repr = torch.zeros(list(ori_event_repr.shape[0:2]) + [288, 384])
-        transformed_event_repr = torch.zeros([event_repr.shape[0], 288, 384])
-        transformed_flow = torch.zeros([int_flow.shape[0], 288, 384])
+            transformed_ori_event_repr = torch.zeros(list(ori_event_repr.shape[0:2]) + [128, 128])
+        transformed_event_repr = torch.zeros([event_repr.shape[0], 128, 128])
+        transformed_flow = torch.zeros([int_flow.shape[0], 128, 128])
 
         # For randomized transformation, setting random seed guarantee the uniform operation
         #   between events and grayscale images
@@ -313,7 +313,7 @@ if __name__ == '__main__':
     print('--- Test test_w_reset ---')
     test_2_w_reset_dataset = AugmentedVoxelDSECDataset(
         dataset_dir='/local/a/datasets/dsec-preprocessed/', dt=1, n_split=10,
-        transform=transforms.Compose([transforms.CenterCrop((288, 384))]),
+        transform=transforms.Compose([transforms.CenterCrop((128, 128))]),
         random_flip=False, mode='test_w_reset')
     test_2_w_reset_loader = DataLoader(dataset=test_2_w_reset_dataset, batch_size=16, shuffle=False, num_workers=8)
     for idx, (prev_event_repr, cur_event_repr, ori_event_repr, flow, flow_mask) in tqdm(enumerate(test_2_w_reset_loader), total=len(test_2_w_reset_loader)):
@@ -337,7 +337,7 @@ if __name__ == '__main__':
     # it_1 = iter(train_loader_1)
     train_dataset_2 = AugmentedVoxelDSECDataset(
         dataset_dir='/local/a/datasets/dsec-preprocessed/', dt=1, n_split=10,
-        transform=transforms.Compose([transforms.CenterCrop((288, 384))]),
+        transform=transforms.Compose([transforms.CenterCrop((128, 128))]),
         random_flip=False, mode='train')
     train_loader_2 = DataLoader(dataset=train_dataset_2, batch_size=16, shuffle=False, num_workers=8)
 

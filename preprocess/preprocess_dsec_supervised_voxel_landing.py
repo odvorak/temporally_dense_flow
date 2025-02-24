@@ -9,9 +9,9 @@ from tqdm import tqdm
 
 def rectify_events(rect_map, x: np.ndarray, y: np.ndarray):
     # From distorted to undistorted
-    assert rect_map.shape == (480, 640, 2), 'Invalid rectify map size {}'.format(rect_map.shape)
-    assert x.max() < 640, 'Invalid x-position'
-    assert y.max() < 480, 'Invalid y-position'
+    assert rect_map.shape == (200, 200, 2), 'Invalid rectify map size {}'.format(rect_map.shape)
+    assert x.max() < 200, 'Invalid x-position'
+    assert y.max() < 200, 'Invalid y-position'
     return rect_map[y, x]
 
 
@@ -67,10 +67,10 @@ class VoxelGrid:
         return voxel_grid
 
 
-def preprocess_dataset(voxel_grid, events, rect_map, flow_paths, env_name, flow_idx_2_event_idx, flow_ts, event_ts, dt, n_split,
+def preprocess_dataset(voxel_grid, events, flow_paths, env_name, flow_idx_2_event_idx, flow_ts, event_ts, dt, n_split,
                        save_dir, chunk_idx):
     # Allocate cost volume tensor for pre-processing
-    event_repr = torch.zeros((n_split, 2, 480, 640), dtype=torch.float)
+    event_repr = torch.zeros((n_split, 2, 200, 200), dtype=torch.float)
 
     pols = events['p']
     xs = events['x']
@@ -89,13 +89,13 @@ def preprocess_dataset(voxel_grid, events, rect_map, flow_paths, env_name, flow_
         sel_pols = np.asarray(pols[start_event_idx:end_event_idx])
         sel_xs = np.asarray(xs[start_event_idx:end_event_idx])
         sel_ys = np.asarray(ys[start_event_idx:end_event_idx])
-        sel_rect_xys = rectify_events(rect_map, sel_xs, sel_ys)
-        sel_rect_xs = sel_rect_xys[:, 0]
-        sel_rect_ys = sel_rect_xys[:, 1]
+        #sel_rect_xys = rectify_events(rect_map, sel_xs, sel_ys)
+        #sel_rect_xs = sel_rect_xys[:, 0]
+        #sel_rect_ys = sel_rect_xys[:, 1]
 
         sel_ts = ts[start_event_idx:end_event_idx]
 
-        voxel = events_to_voxel_grid(voxel_grid, sel_pols, sel_ts, sel_rect_xs, sel_rect_ys)
+        voxel = events_to_voxel_grid(voxel_grid, sel_pols, sel_ts, sel_xs, sel_ys)
 
         # Save event_repr to a directory
         torch.save({'voxel': voxel},
@@ -131,10 +131,10 @@ if __name__ == '__main__':
     # Parser for setting parameters of the pre-processing script 
     parser = argparse.ArgumentParser(description='Preprocessing dataset script for fast data loading',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--save-dir', type=str, default='/local/a/datasets/dsec-preprocessed',
+    parser.add_argument('--save-dir', type=str, default='E:/EBAL_v10/train/savedir_train/voxel',
                         help='Path to a directory that results will be saved')
     parser.add_argument('--dataset-dir', type=str,
-                        default='/local/a/datasets/dsec/',
+                        default='E:/EBAL_v10/train/',
                         help='Path to dataset')
     parser.add_argument('--dt', type=int, default=1, help='Frame difference for computing a photometric loss')
     parser.add_argument('--n-split', type=int, default=10, help='Number of bins for events representation')
@@ -145,18 +145,15 @@ if __name__ == '__main__':
     with open(env_name_file_path, 'r') as env_name_file:
         for line in env_name_file:
             env_names.append(line.strip())
-    
     # np.int32 is sufficient to capture event idx, all sequence have 315k events
-    event_data_file_paths = [os.path.join(args.dataset_dir, env_name, 'events', 'left', 'events.h5')
+    event_data_file_paths = [os.path.join(args.dataset_dir, env_name, 'events.h5')
                              for env_name in env_names]
-    rect_map_file_paths = [os.path.join(args.dataset_dir, env_name, 'events', 'left', 'rectify_map.h5')
-                           for env_name in env_names]
     flow_timestamp_paths = [os.path.join(args.dataset_dir, env_name, 'flow', 'forward_timestamps.txt')
                             for env_name in env_names]
     flow_dirs = [os.path.join(args.dataset_dir, env_name, 'flow', 'forward') for env_name in env_names]
     save_dir = os.path.join(args.save_dir, 'np_voxel_dt{}_tsplit{}'.format(args.dt, args.n_split))
-   
-    voxel_grid = VoxelGrid((args.n_split, 480, 640))
+
+    voxel_grid = VoxelGrid((args.n_split, 200, 200))
 
     # Create a directory to save a dataset if it doesn't exist
     if not os.path.exists(save_dir):
@@ -164,17 +161,14 @@ if __name__ == '__main__':
     print(save_dir)
 
     for env_name, event_data_file_path, \
-        rect_map_file_path, flow_timestamp_path, \
-        flow_dir in zip(env_names, event_data_file_paths, rect_map_file_paths, flow_timestamp_paths, flow_dirs):
+            flow_timestamp_path, \
+            flow_dir in zip(env_names, event_data_file_paths, flow_timestamp_paths, flow_dirs):
         event_data_file = h5py.File(event_data_file_path, 'r')
         events = event_data_file['events']
         event_rts = np.asarray(events['t'])
         offset = int(event_data_file['t_offset'][()])  # offset in microsecond
-        
-        rect_map_file = h5py.File(rect_map_file_path, 'r')
-        rect_map = np.asarray(rect_map_file['rectify_map'])
-   
-        num_flow = sum(1 for line in open(flow_timestamp_path, 'r'))    # number of flow + 1
+
+        num_flow = sum(1 for line in open(flow_timestamp_path, 'r'))  # number of flow + 1
         flow_ts = []
         with open(flow_timestamp_path, 'r') as flow_timestamp_file:
             for flow_idx, line in enumerate(flow_timestamp_file):
@@ -199,8 +193,8 @@ if __name__ == '__main__':
         list_chopped_flow_rts = []
         start_idx = 0
         for each_end_idx in np.where(diff > 1.1e5)[0].tolist():
-            list_chopped_flow_rts.append(flow_rts[start_idx:each_end_idx+1])
-            start_idx = each_end_idx+1
+            list_chopped_flow_rts.append(flow_rts[start_idx:each_end_idx + 1])
+            start_idx = each_end_idx + 1
         list_chopped_flow_rts.append(flow_rts[start_idx:])
         assert flow_rts.size == sum([each.size for each in list_chopped_flow_rts]), 'Invalid spliting'
 
@@ -208,8 +202,11 @@ if __name__ == '__main__':
         flow_paths = sorted(flow_paths, key=lambda x: int(x.split('.')[0]))
         flow_paths = [os.path.join(flow_dir, flow_path) for flow_path in flow_paths]
 
+        # modif!
+        flow_paths = flow_paths[:-1]
+
         list_chopped_flow_paths = []
-        num_flow_paths_per_chunks = [each.size-1 for each in list_chopped_flow_rts]
+        num_flow_paths_per_chunks = [each.size - 1 for each in list_chopped_flow_rts]
         assert len(flow_paths) == sum(num_flow_paths_per_chunks), \
             'Invalid spliting {} and {}'.format(len(flow_paths), sum(num_flow_paths_per_chunks))
         from itertools import islice
@@ -222,16 +219,21 @@ if __name__ == '__main__':
             mapping_path = os.path.join(args.dataset_dir, 'flow_2_event_idx_mapping',
                                         '{}_fw_flow_idx_2_event_idx_chunk{:01d}.npy'.format(env_name, chunk_idx))
             if not os.path.isfile(mapping_path):
-                print('Creating a mapping for chunk {}/{} of {}'.format(chunk_idx+1,
+                # modif!
+                dir_exists = os.path.exists(os.path.join(args.dataset_dir, 'flow_2_event_idx_mapping'))
+                if not dir_exists:
+                    os.mkdir(os.path.join(args.dataset_dir, 'flow_2_event_idx_mapping'))
+                print('Creating a mapping for chunk {}/{} of {}'.format(chunk_idx + 1,
                                                                         len(list_chopped_flow_rts), env_name))
                 flow_idx_2_event_idx = get_flow_idx_2_event_idx(event_rts, chopped_flow_rts)
                 np.save(mapping_path[:-4], flow_idx_2_event_idx)
             else:
-                print('Loading a mapping for chunk {}/{} of {}'.format(chunk_idx+1,
+                print('Loading a mapping for chunk {}/{} of {}'.format(chunk_idx + 1,
                                                                        len(list_chopped_flow_rts), env_name))
                 flow_idx_2_event_idx = np.load(mapping_path)
 
-            preprocess_dataset(voxel_grid=voxel_grid, events=events, rect_map=rect_map, flow_paths=chopped_flow_paths, env_name=env_name,
+            preprocess_dataset(voxel_grid=voxel_grid, events=events, flow_paths=chopped_flow_paths,
+                               env_name=env_name,
                                flow_idx_2_event_idx=flow_idx_2_event_idx, flow_ts=chopped_flow_rts, event_ts=event_rts,
                                dt=args.dt, n_split=args.n_split, save_dir=save_dir, chunk_idx=chunk_idx)
 
