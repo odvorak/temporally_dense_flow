@@ -98,7 +98,7 @@ def preprocess_dataset(voxel_grid, events, flow_paths, env_name, flow_idx_2_even
         voxel = events_to_voxel_grid(voxel_grid, sel_pols, sel_ts, sel_xs, sel_ys)
 
         # Save event_repr to a directory
-        torch.save({'voxel': voxel},
+        torch.save({'voxel': voxel, 'flow': flow, 'flow_mask': flow_mask},
                    os.path.join(save_dir, '{}_chunk{}_{:06d}.pt'.format(env_name, chunk_idx, flow_idx)))
         # np.savez_compressed(os.path.join(save_dir, '{}_chunk{}_{:06d}'.format(env_name, chunk_idx, flow_idx)),
         #                     voxel=voxel.numpy())

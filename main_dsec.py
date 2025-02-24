@@ -79,16 +79,28 @@ def train(train_loader, model, optim, epoch, log_file, no_grad_split, grad_scala
         pred_flows = outps[outp_len - 1]
 
         gt_flow_masks = gt_flow_masks.unsqueeze(dim=1).expand(gt_flows.shape).cuda()
-        loss_type = "l1"
+        loss_type = "corr"
         if loss_type == "l1":
             all_pixel_errors = torch.abs(gt_flows - pred_flows)
         elif loss_type == "l2":
             all_pixel_errors = (gt_flows - pred_flows)**2
         elif loss_type == "corr":
             all_pixel_errors = torch.abs(gt_flows - pred_flows)
-            all_pixel_errors_signed = gt_flows - pred_flows
-            downsampled_errors = torch.nn.functional.avg_pool2d(all_pixel_errors_signed, kernel_size=32, stride=32)
-            downsampled_errors_abs = torch.abs(downsampled_errors)
+            sig_u = pred_flows[:, 0] - gt_flows[:, 0]
+            sig_v = pred_flows[:, 1] - gt_flows[:, 1]
+            kernel_size = 50
+            #
+            # # Create a mean kernel (normalized)
+            mean_kernel = torch.ones((1, 1, kernel_size, kernel_size), device='cuda') / (kernel_size ** 2)
+            #
+            # # Apply the mean filter to smooth the entire field
+            unsig_u_smooth = torch.nn.functional.conv2d(sig_u, mean_kernel, padding=kernel_size // 2)
+            unsig_v_smooth = torch.nn.functional.conv2d(sig_v, mean_kernel, padding=kernel_size // 2)
+            #
+            # # Compute correlation loss
+            corr_loss = torch.abs(unsig_u_smooth) + torch.abs(unsig_v_smooth)
+            #
+            all_pixel_errors = all_pixel_errors + 0.5 * corr_loss
 
         valid_pixel_errors = all_pixel_errors[gt_flow_masks]
         #print('classic', torch.mean(valid_pixel_errors))
