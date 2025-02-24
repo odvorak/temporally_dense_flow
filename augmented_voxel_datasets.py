@@ -71,7 +71,7 @@ class AugmentedVoxelDSECDataset(Dataset):
         # Positive and negative events in each bin are then translated to values of 2 channels.
         # For this reason, this custom dataset object will output an event representation
         #   as a tensor of shape (n_split, n_polarity=2, width, height)
-        self.dataset_dir = os.path.join(dataset_dir, f'np_dt{self.dt}_tsplit{self.n_split}')
+        self.dataset_dir = os.path.join(dataset_dir, f'np_voxel_dt{self.dt}_tsplit{self.n_split}')
         self.n_prefix_event_repr = 1 + 1 # Get additional prefix for computing intermediate target
             # Also get additional prefix for computing ERAFT model
         # This parameter is only used for training sequential optical flow prediction
