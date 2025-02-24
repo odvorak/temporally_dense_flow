@@ -100,7 +100,7 @@ def train(train_loader, model, optim, epoch, log_file, no_grad_split, grad_scala
             # # Compute correlation loss
             corr_loss = torch.abs(unsig_u_smooth) + torch.abs(unsig_v_smooth)
             #
-            all_pixel_errors = all_pixel_errors + 0.5 * corr_loss
+            all_pixel_errors = all_pixel_errors + 0.5 * corr_loss[0:128,0:128]
 
         valid_pixel_errors = all_pixel_errors[gt_flow_masks]
         #print('classic', torch.mean(valid_pixel_errors))
